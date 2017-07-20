@@ -13,12 +13,18 @@ import asyncio
 loop = asyncio.get_event_loop()
 async def test():
     await orm.create_pool(user='www-data',password='www-data',db='simple')
-    u = User(name='Test',email='test004@example.com',passwd='1234567890',image='about:blank')
-    await u.save()
+    u = User(name='KeWei',email='test005@example.com',passwd='1234567890',image='about:blank')
+    # await  u.save()
+    user = await User.find('1') # 这个地方开始忘记了加上'' 导致一个转换double的错误。
+    print(user.name,user.email,user.create_at,user.id)
+    result = await User.findNumber('count(distinct name)')
+    print(result)
 #
 # for x in test():
 #     pass
 loop.run_until_complete(test())
+
+
 
 # example to connect to sql
 # import asyncio
