@@ -40,7 +40,7 @@ def merge(defaults,override):
 
 def toDict(d):
     D = Dict()
-    for k,v in d.items()
+    for k,v in d.items():
         D[k] = toDict(v) if isinstance(v,dict) else v
     return D
 
@@ -48,7 +48,7 @@ def toDict(d):
 
 configs = config_default.configs
 try:
-    imort config_override
+    import config_override
     configs = merge(configs,config_override.configs)
 except ImportError:
     pass
