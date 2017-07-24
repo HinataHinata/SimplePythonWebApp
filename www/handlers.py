@@ -59,7 +59,7 @@ async def cookie2user(cookie_str):
 
 
 @get('/')
-async def index(request = 0):
+async def index(request):
     summary = '李白（701年－762年），字太白，号青莲居士，中国唐朝诗人，自言祖籍陇西成纪（今甘肃省天水市秦安县），先世西凉武昭王李嵩之后，与李唐皇室同宗，得罪播西域。幼时内迁，寄籍剑南道绵州（今四川省江油昌隆县）。另郭沫若考证李白出生于吉尔吉斯碎叶河上的碎叶城，属唐安西都护府（今楚河州托克马克市）[1]。有“诗仙”、“诗侠”、“酒仙”、“谪仙人”等称呼，活跃于盛唐[2]，为杰出的浪漫主义诗人。与杜甫合称“李杜”[3]。被贺知章惊呼为“天上谪仙”。'
     blogs= [
         Blog(id = '1',name='TestBlog',summary= summary,create_at = time.time()-120),
@@ -72,34 +72,34 @@ async def index(request = 0):
     }
 
 @get('/blog')
-async def get_blog():
+async def get_blog(request):
     return 'Hello,Blog'
 
 @get('/api/users')
-async def api_get_users():
+async def api_get_users(request):
     users = await User.findAll(orderBy='create_at desc')
     for u in users:
         u.passwd = '******'
     return dict(users = users)
 @get('/register')
-async def register():
+async def register(request):
     return{
         '__template__':'register.html'
     }
 @get('/signin')
-async def signin():
+async def signin(request):
     return {
         '__template__':'signin.html'
     }
 
 
 @post('/api/authenticate')
-async def authenticate(*,email,passwd):
+async def authenticate(request,*,email,passwd):
     if not email:
         raise APIValueError(email,'Invalid email')
     if not passwd:
         raise APIValueError('passwd','Invalid password')
-    users = await User.findAll('email=',[email])
+    users = await User.findAll('email=?',[email])
     if len(users) == 0:
         raise APIValueError(email,'Email not exist')
     # warnning 这里需要判断是不是只拿到了一个 如果拿到多个是不对的。
@@ -120,7 +120,7 @@ async def authenticate(*,email,passwd):
     return r
 
 @get('/signout')
-async def signout():
+async def signout(request):
     referer = request.headers.get('Referer')
     r = web.HTTPFound(referer or '/')
     r.set_cookie(COOKIE_NAME,'-deleted-',max_age=0,httponly=True)
