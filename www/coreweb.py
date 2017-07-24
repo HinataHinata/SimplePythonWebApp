@@ -133,7 +133,7 @@ class RequestHandler(object):
                     return web.HTTPBadRequest('Missing argument:%s' % name)
         logging.info('call with args:%s' % str(kw))
         try:
-            r = await self._func(request,**kw)
+            r = await self._func(**kw)
             return r
         except APIError as e:
             return dict(error=e.error,data=e.data,message=message)
