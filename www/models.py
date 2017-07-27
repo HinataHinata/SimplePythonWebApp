@@ -31,7 +31,7 @@ class Blog(Model):
     user_name = StringField(ddl='varchar(50)')
     user_image = StringField(ddl='varchar(500)')
     name = StringField(ddl='varchar(50)')
-    sumary = StringField(ddl='varchar(200)')
+    summary = StringField(ddl='varchar(200)')
     content = TextField()
     create_at = FloatField(default=time.time)
 
