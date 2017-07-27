@@ -151,10 +151,28 @@ async def signout(request):
     logging.info('user signed out.')
     return r
 
+@get('/manage/')
+def manage():
+    return 'redirect:/manage/comments'
+
 @get('/manage/blogs')
 async def manage_blogs(request,*,page='1'):
     return {
         '__template__':'manage_blogs.html',
+        'page_index':get_page_index(page)
+    }
+
+@get('/manage/users')
+async def manage_users(request,*,page='1'):
+    return{
+        '__template__':'manage_users.html',
+        'page_index':get_page_index(page)
+    }
+
+@get('/manage/comments')
+async def manage_comments(request,*,page='1'):
+    return{
+        '__template__':'manage_comments.html',
         'page_index':get_page_index(page)
     }
 
@@ -165,6 +183,53 @@ async def manage_create_blog(request):
         'id':'',
         'action':'/api/blogs'
     }
+@get('/manage/blogs/edit')
+async def manage_edit_blog(request,*,id):
+    currentBlog = Blog.find(id)
+    if currentBlog is None:
+        raise APIResourceNotFoundError('blog','blog not found')
+    return {
+        '__template__':'manage_blog_edit.html',
+        'id':id,
+        'action':'/api/blogs/%s' % id
+    }
+
+@get('/api/comments')
+async def api_comments(request,*,page='1'):
+    page_index = get_page_index(page)
+    num = await Comment.findNumber('count(id)')
+    p = Page(num,page_index)
+    if num == 0:
+        return dict(page=p,comments=())
+    comments = await Comment.findAll(orderBy='create_at desc',limit = (p.offset,p.limit))
+    return dict(page=p,comments = comments)
+
+@post('/api/blogs/{id}/comments')
+async def api_create_comment(request,*,content,id):
+    user = request.__user__
+    if user is None:
+        raise APIPermissionError('Please signin first')
+    if not content or not content.strip():
+        raise APIValueError('content','content cannot be empty')
+    blog = await Blog.find(id)
+    if blog is None:
+        raise APIResourceNotFoundError('blog','blog not found')
+    comment = Comment(blog_id = blog.id,user_id = user.id,user_name = user.name,user_image = user.image,content = content.strip())
+    await comment.save()
+    return comment
+
+@post('/api/comments/{id}/delete')
+async def api_delete_comments(request,*,id):
+    check_admin(request)
+    comment = await Comment.find(id)
+    if comment is None:
+        raise APIResourceNotFoundError('Comment','comment not found')
+    await comment.remove()
+    return dict(id = id) # 这里为啥要 return
+
+
+
+
 
 
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
@@ -210,7 +275,7 @@ async def api_get_blog(request,*,id):
 
 @post('/api/blogs')
 async def api_create_blog(request,*,name,summary,content):
-    # check_admin(request)
+    check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name','name cannot be empty')
     if not summary or not summary.strip():
@@ -220,3 +285,32 @@ async def api_create_blog(request,*,name,summary,content):
     blog = Blog(user_id=request.__user__.id,user_name = request.__user__.name,user_image=request.__user__.image,name = name.strip(),summary = summary.strip(),content = content.strip())
     await blog.save()
     return blog;
+
+@post('/api/blogs/{id}')
+async def api_modify_blog(request,*,name,summary,content):
+    check_admin(request)
+    blog = await Blog.find(id)
+    if blog is None:
+        raise APIResourceNotFoundError('blog','blog not found')
+    if not name or not name.strip():
+        raise APIValueError('name','name cannot be empty')
+    if not summary or not summary.strip():
+        raise APIValueError('summary','summary cannot be empty')
+    if not content or not content.strip():
+        raise APIValueError('content','content cannot be empty')
+    blog.name = name.strip()
+    blog.summary = summary.strip()
+    blog.content = content.strip()
+    blog.update()
+    return blog
+
+@post('/api/blogs/{id}/delete')
+async def api_delete_blog(request,*,id):
+    check_admin(request)
+    blog = await Blog.find(id)
+    if blog is None:
+        raise APIResourceNotFoundError('blog','blog not found')
+    await blog.remove()
+    return dict(id = id)
+
+
